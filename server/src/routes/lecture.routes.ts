@@ -8,33 +8,23 @@ import {
   updateLectureSchema,
   reorderLecturesSchema,
 } from "../validators/lecture.validator";
-import { uploadLectureFiles } from "../middleware/upload.middleware";
 
 const router = Router({ mergeParams: true });
 
 router.get("/", optionalAuthenticate, lectureController.listLectures);
 
-router.post(
-  "/",
-  authenticate,
-  requireAdmin,
-  uploadLectureFiles,
-  validate(createLectureSchema),
-  lectureController.createLecture
-);
+router.post("/", authenticate, requireAdmin, validate(createLectureSchema), lectureController.createLecture);
 
 router.patch("/reorder", authenticate, requireAdmin, validate(reorderLecturesSchema), lectureController.reorderLectures);
 
 export default router;
 
-// Standalone router for direct /api/lectures/:id access
 export const standaloneLectureRouter = Router();
 standaloneLectureRouter.get("/:id", optionalAuthenticate, lectureController.getLecture);
 standaloneLectureRouter.patch(
   "/:id",
   authenticate,
   requireAdmin,
-  uploadLectureFiles,
   validate(updateLectureSchema),
   lectureController.updateLecture
 );

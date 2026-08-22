@@ -3,7 +3,6 @@ import { catchAsync } from "../utils/catchAsync";
 import { success } from "../utils/apiResponse";
 import { prisma } from "../config/database";
 import { NotFoundError } from "../utils/appError";
-import { uploadBuffer } from "../config/storage";
 import { AuthRequest } from "../middleware/auth.middleware";
 
 export const listBanners = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -16,12 +15,7 @@ export const listBanners = catchAsync(async (req: AuthRequest, res: Response) =>
 });
 
 export const createBanner = catchAsync(async (req: AuthRequest, res: Response) => {
-  let imageUrl = req.body.imageUrl;
-  if (req.file) {
-    const uploaded = await uploadBuffer(req.file.buffer, { folder: "banners", resourceType: "image" });
-    imageUrl = uploaded.url;
-  }
-  const banner = await prisma.banner.create({ data: { ...req.body, imageUrl } });
+  const banner = await prisma.banner.create({ data: req.body });
   return success(res, banner, 201);
 });
 
@@ -29,16 +23,7 @@ export const updateBanner = catchAsync(async (req: AuthRequest, res: Response) =
   const existing = await prisma.banner.findUnique({ where: { id: req.params.id } });
   if (!existing) throw new NotFoundError("البانر");
 
-  let imageUrl = req.body.imageUrl;
-  if (req.file) {
-    const uploaded = await uploadBuffer(req.file.buffer, { folder: "banners", resourceType: "image" });
-    imageUrl = uploaded.url;
-  }
-
-  const banner = await prisma.banner.update({
-    where: { id: req.params.id },
-    data: { ...req.body, ...(imageUrl ? { imageUrl } : {}) },
-  });
+  const banner = await prisma.banner.update({ where: { id: req.params.id }, data: req.body });
   return success(res, banner);
 });
 

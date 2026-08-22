@@ -2,7 +2,6 @@ import { Response } from "express";
 import { catchAsync } from "../utils/catchAsync";
 import { success } from "../utils/apiResponse";
 import * as teamService from "../services/team.service";
-import { uploadBuffer } from "../config/storage";
 import { AuthRequest } from "../middleware/auth.middleware";
 
 export const listTeams = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -17,26 +16,12 @@ export const getTeam = catchAsync(async (req: AuthRequest, res: Response) => {
 });
 
 export const createTeam = catchAsync(async (req: AuthRequest, res: Response) => {
-  let imageUrl = req.body.imageUrl;
-
-  if (req.file) {
-    const uploaded = await uploadBuffer(req.file.buffer, { folder: "teams", resourceType: "image" });
-    imageUrl = uploaded.url;
-  }
-
-  const team = await teamService.createTeam({ ...req.body, imageUrl });
+  const team = await teamService.createTeam(req.body);
   return success(res, team, 201);
 });
 
 export const updateTeam = catchAsync(async (req: AuthRequest, res: Response) => {
-  let imageUrl = req.body.imageUrl;
-
-  if (req.file) {
-    const uploaded = await uploadBuffer(req.file.buffer, { folder: "teams", resourceType: "image" });
-    imageUrl = uploaded.url;
-  }
-
-  const team = await teamService.updateTeam(req.params.id, { ...req.body, ...(imageUrl ? { imageUrl } : {}) });
+  const team = await teamService.updateTeam(req.params.id, req.body);
   return success(res, team);
 });
 

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ChevronLeft, FileText, Headphones } from "lucide-react";
 import { lecturesApi } from "../../api/lectures.api";
 import { subjectsApi } from "../../api/subjects.api";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { DataTable, Column } from "../../components/admin/DataTable";
 import { FormModal, FormField } from "../../components/admin/FormModal";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
@@ -36,8 +37,8 @@ export function AdminLecturesPage() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveLabel, setSaveLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Lecture | null>(null);
-  const [uploadProgressLabel, setUploadProgressLabel] = useState("");
 
   function resetFiles() {
     setPdfFile(null);
@@ -68,22 +69,40 @@ export function AdminLecturesPage() {
     e.preventDefault();
     if (!subjectId) return;
     setSaving(true);
-    setUploadProgressLabel("جاري رفع الملفات...");
     try {
-      const fd = new FormData();
-      fd.append("title", form.title);
-      fd.append("description", form.description);
-      fd.append("order", form.order);
-      fd.append("status", form.status);
-      if (pdfFile) fd.append("pdf", pdfFile);
-      if (audioFile) fd.append("audio", audioFile);
-      if (thumbnailFile) fd.append("thumbnail", thumbnailFile);
+      let pdfUrl: string | undefined;
+      let audioUrl: string | undefined;
+      let thumbnailUrl: string | undefined;
 
+      if (pdfFile) {
+        setSaveLabel("جاري رفع ملف PDF...");
+        pdfUrl = await uploadToCloudinary(pdfFile, "raw", "lectures/pdf");
+      }
+      if (audioFile) {
+        setSaveLabel("جاري رفع الملف الصوتي...");
+        audioUrl = await uploadToCloudinary(audioFile, "video", "lectures/audio");
+      }
+      if (thumbnailFile) {
+        setSaveLabel("جاري رفع الصورة المصغّرة...");
+        thumbnailUrl = await uploadToCloudinary(thumbnailFile, "image", "lectures/thumbnails");
+      }
+
+      const payload = {
+        title: form.title,
+        description: form.description || undefined,
+        order: Number(form.order),
+        status: form.status,
+        ...(pdfUrl ? { pdfUrl } : {}),
+        ...(audioUrl ? { audioUrl } : {}),
+        ...(thumbnailUrl ? { thumbnailUrl } : {}),
+      };
+
+      setSaveLabel("جاري الحفظ...");
       if (editing) {
-        await lecturesApi.update(editing.id, fd);
+        await lecturesApi.update(editing.id, payload);
         showToast("تم تحديث المحاضرة بنجاح");
       } else {
-        await lecturesApi.create(subjectId, fd);
+        await lecturesApi.create(subjectId, payload);
         showToast("تم إنشاء المحاضرة بنجاح");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-lectures", subjectId] });
@@ -92,7 +111,7 @@ export function AdminLecturesPage() {
       showToast(err instanceof Error ? err.message : "حدث خطأ أثناء الرفع", "error");
     } finally {
       setSaving(false);
-      setUploadProgressLabel("");
+      setSaveLabel("");
     }
   }
 
@@ -177,7 +196,7 @@ export function AdminLecturesPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         loading={saving}
-        submitLabel={uploadProgressLabel || "حفظ"}
+        submitLabel={saveLabel || "حفظ"}
       >
         <FormField label="عنوان المحاضرة">
           <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" />

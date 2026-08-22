@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { bannersApi } from "../../api/misc.api";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { DataTable, Column } from "../../components/admin/DataTable";
 import { FormModal, FormField } from "../../components/admin/FormModal";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
@@ -21,6 +22,7 @@ export function AdminBannersPage() {
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveLabel, setSaveLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Banner | null>(null);
 
   function openCreate() {
@@ -48,25 +50,34 @@ export function AdminBannersPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const fd = new FormData();
-      fd.append("title", form.title);
-      fd.append("description", form.description);
-      fd.append("buttonText", form.buttonText);
-      fd.append("link", form.link);
-      fd.append("order", form.order);
-      fd.append("status", form.status);
-      if (imageFile) fd.append("image", imageFile);
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        setSaveLabel("جاري رفع الصورة...");
+        imageUrl = await uploadToCloudinary(imageFile, "image", "banners");
+      }
 
+      if (!editing && !imageUrl) {
+        showToast("يجب اختيار صورة للبانر", "error");
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        title: form.title,
+        description: form.description || undefined,
+        buttonText: form.buttonText || undefined,
+        link: form.link || undefined,
+        order: Number(form.order),
+        status: form.status,
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+
+      setSaveLabel("جاري الحفظ...");
       if (editing) {
-        await bannersApi.update(editing.id, fd);
+        await bannersApi.update(editing.id, payload);
         showToast("تم تحديث البانر بنجاح");
       } else {
-        if (!imageFile) {
-          showToast("يجب اختيار صورة للبانر", "error");
-          setSaving(false);
-          return;
-        }
-        await bannersApi.create(fd);
+        await bannersApi.create(payload as any);
         showToast("تم إنشاء البانر بنجاح");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-banners"] });
@@ -75,6 +86,7 @@ export function AdminBannersPage() {
       showToast(err instanceof Error ? err.message : "حدث خطأ ما", "error");
     } finally {
       setSaving(false);
+      setSaveLabel("");
     }
   }
 
@@ -143,6 +155,7 @@ export function AdminBannersPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         loading={saving}
+        submitLabel={saveLabel || "حفظ"}
       >
         <FormField label="العنوان">
           <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-field" />

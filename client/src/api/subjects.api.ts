@@ -1,6 +1,14 @@
 import { apiClient } from "./client";
 import { ApiResponse, Subject } from "../types";
 
+export interface SubjectInput {
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  order?: number;
+  status?: "ACTIVE" | "INACTIVE";
+}
+
 export const subjectsApi = {
   listByTeam: (teamId: string, all = false) =>
     apiClient
@@ -9,11 +17,11 @@ export const subjectsApi = {
 
   get: (id: string) => apiClient.get<ApiResponse<Subject>>(`/subjects/${id}`).then((r) => r.data.data),
 
-  create: (teamId: string, formData: FormData) =>
-    apiClient.post<ApiResponse<Subject>>(`/teams/${teamId}/subjects`, formData).then((r) => r.data.data),
+  create: (teamId: string, data: SubjectInput) =>
+    apiClient.post<ApiResponse<Subject>>(`/teams/${teamId}/subjects`, data).then((r) => r.data.data),
 
-  update: (id: string, formData: FormData) =>
-    apiClient.patch<ApiResponse<Subject>>(`/subjects/${id}`, formData).then((r) => r.data.data),
+  update: (id: string, data: Partial<SubjectInput>) =>
+    apiClient.patch<ApiResponse<Subject>>(`/subjects/${id}`, data).then((r) => r.data.data),
 
   remove: (id: string) => apiClient.delete(`/subjects/${id}`),
 };

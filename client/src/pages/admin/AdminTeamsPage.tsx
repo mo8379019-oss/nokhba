@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import { teamsApi } from "../../api/teams.api";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { DataTable, Column } from "../../components/admin/DataTable";
 import { FormModal, FormField } from "../../components/admin/FormModal";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
@@ -22,6 +23,7 @@ export function AdminTeamsPage() {
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveLabel, setSaveLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Team | null>(null);
 
   function openCreate() {
@@ -47,18 +49,26 @@ export function AdminTeamsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const fd = new FormData();
-      fd.append("name", form.name);
-      fd.append("description", form.description);
-      fd.append("order", form.order);
-      fd.append("status", form.status);
-      if (imageFile) fd.append("image", imageFile);
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        setSaveLabel("جاري رفع الصورة...");
+        imageUrl = await uploadToCloudinary(imageFile, "image", "teams");
+      }
 
+      const payload = {
+        name: form.name,
+        description: form.description || undefined,
+        order: Number(form.order),
+        status: form.status,
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+
+      setSaveLabel("جاري الحفظ...");
       if (editing) {
-        await teamsApi.update(editing.id, fd);
+        await teamsApi.update(editing.id, payload);
         showToast("تم تحديث الفرقة بنجاح");
       } else {
-        await teamsApi.create(fd);
+        await teamsApi.create(payload);
         showToast("تم إنشاء الفرقة بنجاح");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-teams"] });
@@ -67,6 +77,7 @@ export function AdminTeamsPage() {
       showToast(err instanceof Error ? err.message : "حدث خطأ ما", "error");
     } finally {
       setSaving(false);
+      setSaveLabel("");
     }
   }
 
@@ -99,10 +110,7 @@ export function AdminTeamsPage() {
       header: "إجراءات",
       render: (t) => (
         <div className="flex items-center gap-2">
-          <Link
-            to={`/admin/teams/${t.id}/subjects`}
-            className="btn-secondary !px-3 !py-1.5 text-xs"
-          >
+          <Link to={`/admin/teams/${t.id}/subjects`} className="btn-secondary !px-3 !py-1.5 text-xs">
             المواد <ArrowLeft className="h-3.5 w-3.5" />
           </Link>
           <button onClick={() => openEdit(t)} className="rounded-lg p-1.5 text-primary hover:bg-primary/10">
@@ -134,6 +142,7 @@ export function AdminTeamsPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         loading={saving}
+        submitLabel={saveLabel || "حفظ"}
       >
         <FormField label="اسم الفرقة">
           <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" />

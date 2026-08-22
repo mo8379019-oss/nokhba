@@ -6,19 +6,24 @@ export const searchApi = {
     apiClient.get<ApiResponse<SearchResult>>("/search", { params }).then((r) => r.data.data),
 };
 
+export interface BannerInput {
+  title: string;
+  description?: string;
+  imageUrl: string;
+  buttonText?: string;
+  link?: string;
+  order?: number;
+  status?: "ACTIVE" | "INACTIVE";
+}
+
 export const bannersApi = {
   list: (all = false) =>
     apiClient.get<ApiResponse<Banner[]>>("/banners", { params: all ? { all: true } : {} }).then((r) => r.data.data),
 
-  create: (formData: FormData) =>
-    apiClient
-      .post<ApiResponse<Banner>>("/banners", formData, { headers: { "Content-Type": "multipart/form-data" } })
-      .then((r) => r.data.data),
+  create: (data: BannerInput) => apiClient.post<ApiResponse<Banner>>("/banners", data).then((r) => r.data.data),
 
-  update: (id: string, formData: FormData) =>
-    apiClient
-      .patch<ApiResponse<Banner>>(`/banners/${id}`, formData, { headers: { "Content-Type": "multipart/form-data" } })
-      .then((r) => r.data.data),
+  update: (id: string, data: Partial<BannerInput>) =>
+    apiClient.patch<ApiResponse<Banner>>(`/banners/${id}`, data).then((r) => r.data.data),
 
   remove: (id: string) => apiClient.delete(`/banners/${id}`),
 };

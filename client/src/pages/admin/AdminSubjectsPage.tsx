@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, ChevronLeft, ArrowLeft } from "lucide-react";
 import { subjectsApi } from "../../api/subjects.api";
 import { teamsApi } from "../../api/teams.api";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload";
 import { DataTable, Column } from "../../components/admin/DataTable";
 import { FormModal, FormField } from "../../components/admin/FormModal";
 import { ConfirmDialog } from "../../components/common/ConfirmDialog";
@@ -30,6 +31,7 @@ export function AdminSubjectsPage() {
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveLabel, setSaveLabel] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
 
   function openCreate() {
@@ -56,18 +58,26 @@ export function AdminSubjectsPage() {
     if (!teamId) return;
     setSaving(true);
     try {
-      const fd = new FormData();
-      fd.append("name", form.name);
-      fd.append("description", form.description);
-      fd.append("order", form.order);
-      fd.append("status", form.status);
-      if (imageFile) fd.append("image", imageFile);
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        setSaveLabel("جاري رفع الصورة...");
+        imageUrl = await uploadToCloudinary(imageFile, "image", "subjects");
+      }
 
+      const payload = {
+        name: form.name,
+        description: form.description || undefined,
+        order: Number(form.order),
+        status: form.status,
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+
+      setSaveLabel("جاري الحفظ...");
       if (editing) {
-        await subjectsApi.update(editing.id, fd);
+        await subjectsApi.update(editing.id, payload);
         showToast("تم تحديث المادة بنجاح");
       } else {
-        await subjectsApi.create(teamId, fd);
+        await subjectsApi.create(teamId, payload);
         showToast("تم إنشاء المادة بنجاح");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-subjects", teamId] });
@@ -76,6 +86,7 @@ export function AdminSubjectsPage() {
       showToast(err instanceof Error ? err.message : "حدث خطأ ما", "error");
     } finally {
       setSaving(false);
+      setSaveLabel("");
     }
   }
 
@@ -150,6 +161,7 @@ export function AdminSubjectsPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         loading={saving}
+        submitLabel={saveLabel || "حفظ"}
       >
         <FormField label="اسم المادة">
           <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" />
