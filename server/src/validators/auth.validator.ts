@@ -8,7 +8,7 @@ export const registerSchema = z.object({
       .regex(/^01[0125][0-9]{8}$/, "رقم الهاتف غير صحيح"),
     email: z.string().email("البريد الإلكتروني غير صحيح"),
     password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل"),
-    teamId: z.string().uuid().optional(),
+    teamId: z.string().min(1, "معرّف الفرقة غير صحيح").optional(),
   }),
   query: z.object({}).optional(),
   params: z.object({}).optional(),

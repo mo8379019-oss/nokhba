@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User } from "../types";
 import { authApi } from "../api/auth.api";
 
+const TOKEN_KEY = "ep_token";
+
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(me);
     } catch {
       setUser(null);
+      localStorage.removeItem(TOKEN_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -35,17 +38,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const { user } = await authApi.login({ email, password });
+    const { user, token } = await authApi.login({ email, password });
+    localStorage.setItem(TOKEN_KEY, token);
     setUser(user);
   }
 
   async function register(data: { name: string; phone: string; email: string; password: string; teamId?: string }) {
-    const { user } = await authApi.register(data);
+    const { user, token } = await authApi.register(data);
+    localStorage.setItem(TOKEN_KEY, token);
     setUser(user);
   }
 
   async function logout() {
     await authApi.logout();
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
 
