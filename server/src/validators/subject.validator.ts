@@ -14,11 +14,11 @@ export const createSubjectSchema = z.object({
     }).optional(),
   }),
   query: z.object({}).optional(),
-  params: z.object({ teamId: z.string().uuid("معرّف الفرقة غير صحيح") }),
+  params: z.object({ teamId: z.string().min(1, "معرّف الفرقة غير صحيح") }),
 });
 
 export const updateSubjectSchema = z.object({
   body: createSubjectSchema.shape.body.partial(),
   query: z.object({}).optional(),
-  params: z.object({ id: z.string().uuid("معرّف المادة غير صحيح") }),
+  params: z.object({ id: z.string().min(1, "معرّف المادة غير صحيح") }),
 });
