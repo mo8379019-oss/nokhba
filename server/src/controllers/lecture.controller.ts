@@ -4,6 +4,7 @@ import { success } from "../utils/apiResponse";
 import * as lectureService from "../services/lecture.service";
 import { touchProgress } from "../services/progress.service";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { UnauthorizedError } from "../utils/appError";
 
 export const listLectures = catchAsync(async (req: AuthRequest, res: Response) => {
   const includeInactive = req.user?.role === "ADMIN" && req.query.all === "true";
@@ -12,9 +13,13 @@ export const listLectures = catchAsync(async (req: AuthRequest, res: Response) =
 });
 
 export const getLecture = catchAsync(async (req: AuthRequest, res: Response) => {
-  const lecture = await lectureService.getLectureById(req.params.id, req.user?.id);
+  if (!req.user) {
+    throw new UnauthorizedError("يجب تسجيل الدخول لمشاهدة المحاضرة");
+  }
 
-  if (req.user && req.user.role === "STUDENT") {
+  const lecture = await lectureService.getLectureById(req.params.id, req.user.id);
+
+  if (req.user.role === "STUDENT") {
     await touchProgress(req.user.id, req.params.id);
   }
 

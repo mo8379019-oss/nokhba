@@ -36,7 +36,14 @@ export default function App() {
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/teams/:teamId" element={<TeamDetailsPage />} />
             <Route path="/teams/:teamId/subjects/:subjectId" element={<SubjectDetailsPage />} />
-            <Route path="/lectures/:lectureId" element={<LectureDetailsPage />} />
+            <Route
+              path="/lectures/:lectureId"
+              element={
+                <ProtectedRoute>
+                  <LectureDetailsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/search" element={<SearchPage />} />
             <Route
               path="/profile"

@@ -20,7 +20,7 @@ router.patch("/reorder", authenticate, requireAdmin, validate(reorderLecturesSch
 export default router;
 
 export const standaloneLectureRouter = Router();
-standaloneLectureRouter.get("/:id", optionalAuthenticate, lectureController.getLecture);
+standaloneLectureRouter.get("/:id", authenticate, lectureController.getLecture);
 standaloneLectureRouter.patch(
   "/:id",
   authenticate,
