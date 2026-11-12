@@ -1,3 +1,8 @@
+// ============================================================
+// Educational Platform - Prisma Schema
+// PostgreSQL Database
+// ============================================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,111 +12,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String        @id @default(uuid())
-  name         String
-  phone        String        @unique
-  email        String        @unique
-  passwordHash String
-  role         Role          @default(STUDENT)
-  teamId       String?
-  status       ContentStatus @default(ACTIVE)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  progress     Progress[]
-  team         Team?         @relation(fields: [teamId], references: [id])
-
-  @@index([teamId])
-  @@map("users")
-}
-
-model Team {
-  id          String        @id @default(uuid())
-  name        String
-  description String?
-  imageUrl    String?
-  order       Int           @default(0)
-  status      ContentStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  subjects    Subject[]
-  users       User[]
-
-  @@map("teams")
-}
-
-model Subject {
-  id          String        @id @default(uuid())
-  teamId      String
-  name        String
-  description String?
-  imageUrl    String?
-  order       Int           @default(0)
-  status      ContentStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  lectures    Lecture[]
-  team        Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@map("subjects")
-}
-
-model Lecture {
-  id           String        @id @default(uuid())
-  subjectId    String
-  title        String
-  description  String?
-  pdfUrl       String?
-  audioUrl     String?
-  thumbnailUrl String?
-  order        Int           @default(0)
-  status       ContentStatus @default(ACTIVE)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  subject      Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  progress     Progress[]
-
-  @@index([subjectId])
-  @@map("lectures")
-}
-
-model Progress {
-  id              String         @id @default(uuid())
-  userId          String
-  lectureId       String
-  status          ProgressStatus @default(NOT_STARTED)
-  progressPercent Int            @default(0)
-  audioProgress   Int            @default(0)
-  pdfViewed       Boolean        @default(false)
-  audioPlayed     Boolean        @default(false)
-  completedAt     DateTime?
-  lastAccessedAt  DateTime       @default(now())
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  lecture         Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, lectureId])
-  @@index([userId])
-  @@index([lectureId])
-  @@map("progress")
-}
-
-model Banner {
-  id          String        @id @default(uuid())
-  title       String
-  description String?
-  imageUrl    String
-  buttonText  String?
-  link        String?
-  order       Int           @default(0)
-  status      ContentStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@map("banners")
-}
+// ------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------
 
 enum Role {
   STUDENT
@@ -127,4 +30,155 @@ enum ProgressStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+// ------------------------------------------------------------
+// USERS
+// ------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String   @unique
+  email        String?  @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+
+  teamId       String?
+  team         Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  status       ContentStatus @default(ACTIVE)
+
+  progress     Progress[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([teamId])
+  @@map("users")
+}
+
+// ------------------------------------------------------------
+// TEAMS (الفرق الدراسية)
+// ------------------------------------------------------------
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int      @default(0)
+  status      ContentStatus @default(ACTIVE)
+
+  users       User[]
+  subjects    Subject[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("teams")
+}
+
+// ------------------------------------------------------------
+// SUBJECTS (المواد الدراسية)
+// ------------------------------------------------------------
+
+model Subject {
+  id          String   @id @default(uuid())
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int      @default(0)
+  status      ContentStatus @default(ACTIVE)
+
+  lectures    Lecture[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([teamId])
+  @@map("subjects")
+}
+
+// ------------------------------------------------------------
+// LECTURES (المحاضرات)
+// ------------------------------------------------------------
+
+model Lecture {
+  id           String   @id @default(uuid())
+  subjectId    String
+  subject      Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String?
+
+  pdfUrl       String?
+  audioUrl     String?
+  thumbnailUrl String?
+
+  order        Int      @default(0)
+  status       ContentStatus @default(ACTIVE)
+
+  progress     Progress[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([subjectId])
+  @@map("lectures")
+}
+
+// ------------------------------------------------------------
+// PROGRESS (متابعة تقدم الطالب)
+// ------------------------------------------------------------
+
+model Progress {
+  id               String         @id @default(uuid())
+
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  lectureId        String
+  lecture          Lecture        @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+
+  status           ProgressStatus @default(NOT_STARTED)
+  progressPercent  Int            @default(0)
+  audioProgress    Int            @default(0) // seconds
+
+  pdfViewed        Boolean        @default(false)
+  audioPlayed      Boolean        @default(false)
+
+  completedAt      DateTime?
+  lastAccessedAt   DateTime       @default(now())
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([userId, lectureId])
+  @@index([userId])
+  @@index([lectureId])
+  @@map("progress")
+}
+
+// ------------------------------------------------------------
+// BANNERS
+// ------------------------------------------------------------
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String
+  buttonText  String?
+  link        String?
+  order       Int      @default(0)
+  status      ContentStatus @default(ACTIVE)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("banners")
 }
