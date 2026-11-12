@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogIn, Mail, Lock, GraduationCap } from "lucide-react";
+import { LogIn, Phone, Lock, GraduationCap } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
 
@@ -9,7 +9,7 @@ export function LoginPage() {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(phone.trim(), password);
       showToast("تم تسجيل الدخول بنجاح");
       navigate("/");
     } catch (err) {
@@ -44,16 +44,18 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-dark-light">البريد الإلكتروني</label>
+            <label className="mb-1 block text-sm font-medium text-dark-light">رقم الهاتف</label>
             <div className="relative">
-              <Mail className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dark-light/50" />
+              <Phone className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dark-light/50" />
               <input
-                type="email"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="input-field pr-10"
-                placeholder="example@mail.com"
+                placeholder="01xxxxxxxxx"
               />
             </div>
           </div>
@@ -64,6 +66,7 @@ export function LoginPage() {
               <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dark-light/50" />
               <input
                 type="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
