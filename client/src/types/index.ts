@@ -6,7 +6,7 @@ export interface User {
   id: string;
   name: string;
   phone: string;
-  email: string;
+  email: string | null;
   role: Role;
   teamId: string | null;
   team?: Team | null;
