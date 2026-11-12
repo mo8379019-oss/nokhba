@@ -20,6 +20,17 @@ export const listUsers = catchAsync(async (req: AuthRequest, res: Response) => {
   });
 });
 
+export const exportUsers = catchAsync(async (req: AuthRequest, res: Response) => {
+  const teamId = req.query.teamId as string | undefined;
+  const format = req.query.format === "csv" ? "csv" : "xlsx";
+
+  const { buffer, contentType, extension } = await userService.exportUsers(teamId, format);
+
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="students.${extension}"`);
+  return res.send(buffer);
+});
+
 export const getUser = catchAsync(async (req: AuthRequest, res: Response) => {
   const user = await userService.getUserById(req.params.id);
   return success(res, user);
