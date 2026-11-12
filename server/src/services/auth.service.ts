@@ -1,19 +1,17 @@
 import { prisma } from "../config/database";
 import { comparePassword, hashPassword, signToken } from "../utils/auth";
-import { ConflictError, UnauthorizedError } from "../utils/appError";
+import { ConflictError, NotFoundError, UnauthorizedError } from "../utils/appError";
 import { RegisterInput, LoginInput } from "../validators/auth.validator";
 
 export async function registerStudent(input: RegisterInput) {
-  const existing = await prisma.user.findFirst({
-    where: { OR: [{ email: input.email }, { phone: input.phone }] },
-  });
-
+  const existing = await prisma.user.findUnique({ where: { phone: input.phone } });
   if (existing) {
-    throw new ConflictError(
-      existing.email === input.email
-        ? "البريد الإلكتروني مستخدم بالفعل"
-        : "رقم الهاتف مستخدم بالفعل"
-    );
+    throw new ConflictError("رقم الهاتف مسجّل بالفعل، سجّل الدخول بدلًا من إنشاء حساب جديد");
+  }
+
+  const team = await prisma.team.findUnique({ where: { id: input.teamId } });
+  if (!team || team.status !== "ACTIVE") {
+    throw new NotFoundError("الفرقة");
   }
 
   const passwordHash = await hashPassword(input.password);
@@ -21,7 +19,6 @@ export async function registerStudent(input: RegisterInput) {
   const user = await prisma.user.create({
     data: {
       name: input.name,
-      email: input.email,
       phone: input.phone,
       passwordHash,
       teamId: input.teamId,
@@ -34,14 +31,14 @@ export async function registerStudent(input: RegisterInput) {
 }
 
 export async function loginUser(input: LoginInput) {
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  const user = await prisma.user.findUnique({ where: { phone: input.phone } });
   if (!user) {
-    throw new UnauthorizedError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    throw new UnauthorizedError("رقم الهاتف أو كلمة المرور غير صحيحة");
   }
 
   const isValid = await comparePassword(input.password, user.passwordHash);
   if (!isValid) {
-    throw new UnauthorizedError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    throw new UnauthorizedError("رقم الهاتف أو كلمة المرور غير صحيحة");
   }
 
   if (user.status !== "ACTIVE") {
