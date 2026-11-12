@@ -40,6 +40,10 @@ export const usersApi = {
     apiClient.patch<ApiResponse<User>>(`/users/${id}`, data).then((r) => r.data.data),
 
   remove: (id: string) => apiClient.delete(`/users/${id}`),
+
+  // teamId: undefined = كل الطلاب، "none" = بدون فرقة، أو id الفرقة
+  exportFile: (params: { teamId?: string; format: "xlsx" | "csv" }) =>
+    apiClient.get<Blob>("/users/export", { params, responseType: "blob" }).then((r) => r.data),
 };
 
 export const dashboardApi = {
