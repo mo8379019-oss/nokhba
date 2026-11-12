@@ -30,7 +30,7 @@ export function ProfilePage() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <InfoRow icon={Phone} label="رقم الهاتف" value={user.phone} />
-          <InfoRow icon={Mail} label="البريد الإلكتروني" value={user.email} />
+          {user.email && <InfoRow icon={Mail} label="البريد الإلكتروني" value={user.email} />}
           <InfoRow icon={Users} label="الفرقة الدراسية" value={user.team?.name ?? "غير محدد"} />
           <InfoRow icon={Calendar} label="تاريخ الانضمام" value={new Date(user.createdAt).toLocaleDateString("ar-EG")} />
         </div>
@@ -81,4 +81,4 @@ function StatBox({ label, value }: { label: string; value: number }) {
       <p className="mt-1 text-xs text-dark-light">{label}</p>
     </div>
   );
-}
+              }
