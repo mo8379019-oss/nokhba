@@ -2,10 +2,10 @@ import { apiClient } from "./client";
 import { ApiResponse, User } from "../types";
 
 export const authApi = {
-  register: (data: { name: string; phone: string; email: string; password: string; teamId?: string }) =>
+  register: (data: { name: string; phone: string; password: string; teamId: string }) =>
     apiClient.post<ApiResponse<{ user: User; token: string }>>("/auth/register", data).then((r) => r.data.data),
 
-  login: (data: { email: string; password: string }) =>
+  login: (data: { phone: string; password: string }) =>
     apiClient.post<ApiResponse<{ user: User; token: string }>>("/auth/login", data).then((r) => r.data.data),
 
   logout: () => apiClient.post("/auth/logout"),
