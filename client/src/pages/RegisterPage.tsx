@@ -12,7 +12,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const teamsQuery = useQuery({ queryKey: ["teams"], queryFn: () => teamsApi.list() });
 
-  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", teamId: "" });
+  const [form, setForm] = useState({ name: "", phone: "", password: "", teamId: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ export function RegisterPage() {
     setError(null);
     setLoading(true);
     try {
-      await register({ ...form, teamId: form.teamId || undefined });
+      await register({ ...form, name: form.name.trim(), phone: form.phone.trim() });
       showToast("تم إنشاء الحساب بنجاح");
       navigate("/");
     } catch (err) {
@@ -53,6 +53,7 @@ export function RegisterPage() {
             <label className="mb-1 block text-sm font-medium text-dark-light">الاسم بالكامل</label>
             <input
               required
+              autoComplete="name"
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
               className="input-field"
@@ -64,6 +65,9 @@ export function RegisterPage() {
             <label className="mb-1 block text-sm font-medium text-dark-light">رقم الهاتف</label>
             <input
               required
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={form.phone}
               onChange={(e) => update("phone", e.target.value)}
               className="input-field"
@@ -72,22 +76,12 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-dark-light">البريد الإلكتروني</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => update("email", e.target.value)}
-              className="input-field"
-              placeholder="example@mail.com"
-            />
-          </div>
-
-          <div>
             <label className="mb-1 block text-sm font-medium text-dark-light">كلمة المرور</label>
             <input
               type="password"
               required
+              minLength={6}
+              autoComplete="new-password"
               value={form.password}
               onChange={(e) => update("password", e.target.value)}
               className="input-field"
@@ -96,9 +90,16 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-dark-light">الفرقة الدراسية (اختياري)</label>
-            <select value={form.teamId} onChange={(e) => update("teamId", e.target.value)} className="input-field">
-              <option value="">اختر الفرقة...</option>
+            <label className="mb-1 block text-sm font-medium text-dark-light">الفرقة الدراسية</label>
+            <select
+              required
+              value={form.teamId}
+              onChange={(e) => update("teamId", e.target.value)}
+              className="input-field"
+            >
+              <option value="" disabled>
+                اختر فرقتك...
+              </option>
               {teamsQuery.data?.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
