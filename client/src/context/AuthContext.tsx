@@ -9,8 +9,8 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: { name: string; phone: string; email: string; password: string; teamId?: string }) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  register: (data: { name: string; phone: string; password: string; teamId: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -37,13 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, []);
 
-  async function login(email: string, password: string) {
-    const { user, token } = await authApi.login({ email, password });
+  async function login(phone: string, password: string) {
+    const { user, token } = await authApi.login({ phone, password });
     localStorage.setItem(TOKEN_KEY, token);
     setUser(user);
   }
 
-  async function register(data: { name: string; phone: string; email: string; password: string; teamId?: string }) {
+  async function register(data: { name: string; phone: string; password: string; teamId: string }) {
     const { user, token } = await authApi.register(data);
     localStorage.setItem(TOKEN_KEY, token);
     setUser(user);
