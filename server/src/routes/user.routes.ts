@@ -9,6 +9,8 @@ const router = Router();
 router.use(authenticate, requireAdmin);
 
 router.get("/", userController.listUsers);
+// لازم تكون قبل "/:id" عشان "export" ماتتفسرش كـ id
+router.get("/export", userController.exportUsers);
 router.get("/:id", userController.getUser);
 router.get("/:id/progress", userController.getUserProgress);
 router.patch("/:id", userController.updateUser);
